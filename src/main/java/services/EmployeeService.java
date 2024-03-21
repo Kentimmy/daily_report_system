@@ -113,6 +113,7 @@ public class EmployeeService extends ServiceBase {
         List<String> errors = EmployeeValidator.validate(this, ev, true, true);
 
         //バリデーションエラーがなければデータを登録する
+        System.out.println("errors: "+ errors );
         if (errors.size() == 0) {
             create(ev);
         }
