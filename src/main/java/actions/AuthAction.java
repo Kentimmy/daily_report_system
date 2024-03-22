@@ -13,7 +13,6 @@ import services.EmployeeService;
 
 /**
  * 認証に関する処理を行うActionクラス
- *
  */
 public class AuthAction extends ActionBase {
 
@@ -53,32 +52,30 @@ public class AuthAction extends ActionBase {
         String plainPass = getRequestParam(AttributeConst.EMP_PASS);
         String pepper = getContextScope(PropertyConst.PEPPER);
 
-        // 有効な従業員か認証する
         Boolean isValidEmployee = service.validateLogin(code, plainPass, pepper);
 
         if (isValidEmployee && checkToken()) {
-            // 認証成功の場合
-
-            // ログインした従業員のDBデータを取得
             EmployeeView ev = service.findOne(code, plainPass, pepper);
-            // セッションにログインした従業員を設定
             putSessionScope(AttributeConst.LOGIN_EMP, ev);
-            // セッションにログイン完了のフラッシュメッセージを設定
             putSessionScope(AttributeConst.FLUSH, MessageConst.I_LOGINED.getMessage());
-            // トップページへリダイレクト
             redirect(ForwardConst.ACT_TOP, ForwardConst.CMD_INDEX);
         } else {
-            // 認証失敗の場合
-
-            // CSRF対策用トークンを設定
             putRequestScope(AttributeConst.TOKEN, getTokenId());
-            // 認証失敗エラーメッセージ表示フラグを立てる
             putRequestScope(AttributeConst.LOGIN_ERR, true);
-            // 入力された従業員コードを設定
             putRequestScope(AttributeConst.EMP_CODE, code);
 
-            // ログイン画面を表示
             forward(ForwardConst.FW_LOGIN);
         }
+    }
+
+    /**
+     * ログアウト処理を行う
+     * @throws ServletException
+     * @throws IOException
+     */
+    public void logout() throws ServletException, IOException {
+        removeSessionScope(AttributeConst.LOGIN_EMP);
+        putSessionScope(AttributeConst.FLUSH, MessageConst.I_LOGOUT.getMessage());
+        redirect(ForwardConst.ACT_AUTH, ForwardConst.CMD_SHOW_LOGIN);
     }
 }
