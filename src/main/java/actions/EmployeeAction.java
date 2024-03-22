@@ -28,9 +28,9 @@ public class EmployeeAction extends ActionBase {
         List<EmployeeView> employees = service.getPerPage(page);
         long employeeCount = service.countAll();
 
-        putRequestScope(AttributeConst.EMPLOYEES, employees); // 取得した従業員データ
-        putRequestScope(AttributeConst.EMP_COUNT, employeeCount); // 全ての従業員データの件数
-        putRequestScope(AttributeConst.PAGE, page); // ページ数
+        putRequestScope(AttributeConst.EMPLOYEES, employees);
+        putRequestScope(AttributeConst.EMP_COUNT, employeeCount);
+        putRequestScope(AttributeConst.PAGE, page);
         putRequestScope(AttributeConst.MAX_ROW, JpaConst.ROW_PER_PAGE);
 
         String flush = getSessionScope(AttributeConst.FLUSH);
@@ -39,73 +39,57 @@ public class EmployeeAction extends ActionBase {
             removeSessionScope(AttributeConst.FLUSH);
         }
 
-        // 一覧画面を表示
         forward(ForwardConst.FW_EMP_INDEX);
     }
 
+    public void entryNew() throws ServletException, IOException {
+        putRequestScope(AttributeConst.TOKEN, getTokenId());
+        putRequestScope(AttributeConst.EMPLOYEE, new EmployeeView());
+
+        forward(ForwardConst.FW_EMP_NEW);
+    }
+
+    public void create() throws ServletException, IOException {
+        if (checkToken()) {
+            EmployeeView ev = new EmployeeView(
+                null,
+                getRequestParam(AttributeConst.EMP_CODE),
+                getRequestParam(AttributeConst.EMP_NAME),
+                getRequestParam(AttributeConst.EMP_PASS),
+                toNumber(getRequestParam(AttributeConst.EMP_ADMIN_FLG)),
+                null,
+                null,
+                AttributeConst.DEL_FLAG_FALSE.getIntegerValue());
+
+            String pepper = getContextScope(PropertyConst.PEPPER);
+            List<String> errors = service.create(ev, pepper);
+
+            if (errors.size() > 0) {
+                putRequestScope(AttributeConst.TOKEN, getTokenId());
+                putRequestScope(AttributeConst.EMPLOYEE, ev);
+                putRequestScope(AttributeConst.ERR, errors);
+
+                forward(ForwardConst.FW_EMP_NEW);
+            } else {
+                putSessionScope(AttributeConst.FLUSH, MessageConst.I_REGISTERED.getMessage());
+
+                redirect(ForwardConst.ACT_EMP, ForwardConst.CMD_INDEX);
+            }
+        }
+    }
+
     /**
-     * 新規登録画面を表示する
+     * 論理削除を行う
      * @throws ServletException
      * @throws IOException
      */
-    public void entryNew() throws ServletException, IOException {
-        putRequestScope(AttributeConst.TOKEN, getTokenId()); // CSRF対策用トークン
-        putRequestScope(AttributeConst.EMPLOYEE, new EmployeeView()); // 空の従業員インスタンス
+    public void destroy() throws ServletException, IOException {
+        if (checkToken()) {
+            service.destroy(toNumber(getRequestParam(AttributeConst.EMP_ID)));
 
-        // 新規登録画面を表示
-        forward(ForwardConst.FW_EMP_NEW);
+            putSessionScope(AttributeConst.FLUSH, MessageConst.I_DELETED.getMessage());
 
-    }
-
-        /**
-         * 新規登録を行う
-         * @throws ServletException
-         * @throws IOException
-         */
-        public void create() throws ServletException, IOException {
-
-            //CSRF対策 tokenのチェック
-            if (checkToken()) {
-
-                //パラメータの値を元に従業員情報のインスタンスを作成する
-                EmployeeView ev = new EmployeeView(
-                        null,
-                        getRequestParam(AttributeConst.EMP_CODE),
-                        getRequestParam(AttributeConst.EMP_NAME),
-                        getRequestParam(AttributeConst.EMP_PASS),
-                        toNumber(getRequestParam(AttributeConst.EMP_ADMIN_FLG)),
-                        null,
-                        null,
-                        AttributeConst.DEL_FLAG_FALSE.getIntegerValue());
-
-                //アプリケーションスコープからpepper文字列を取得
-                String pepper = getContextScope(PropertyConst.PEPPER);
-
-                //従業員情報登録
-                List<String> errors = service.create(ev, pepper);
-
-                if (errors.size() > 0) {
-                    //登録中にエラーがあった場合
-
-                    putRequestScope(AttributeConst.TOKEN, getTokenId()); //CSRF対策用トークン
-                    putRequestScope(AttributeConst.EMPLOYEE, ev); //入力された従業員情報
-                    putRequestScope(AttributeConst.ERR, errors); //エラーのリスト
-
-                    //新規登録画面を再表示
-                    forward(ForwardConst.FW_EMP_NEW);
-
-                } else {
-                    //登録中にエラーがなかった場合
-
-                    //セッションに登録完了のフラッシュメッセージを設定
-                    putSessionScope(AttributeConst.FLUSH, MessageConst.I_REGISTERED.getMessage());
-
-                    //一覧画面にリダイレクト
-                    redirect(ForwardConst.ACT_EMP, ForwardConst.CMD_INDEX);
-                }
-
-            }
+            redirect(ForwardConst.ACT_EMP, ForwardConst.CMD_INDEX);
+        }
     }
 }
-
-

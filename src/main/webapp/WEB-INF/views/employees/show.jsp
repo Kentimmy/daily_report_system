@@ -43,12 +43,14 @@
             </tbody>
         </table>
 
+        <c:url var="editUrl" value="?action=${actEmp}&command=${commEdit}&id=${employee.id}" />
         <p>
-            <a href="<c:url value='?action=${actEmp}&command=${commEdit}&id=${employee.id}' />">この従業員情報を編集する</a>
+            <a href="${editUrl}">この従業員情報を編集する</a>
         </p>
 
+        <c:url var="listUrl" value="?action=${actEmp}&command=${commIdx}" />
         <p>
-            <a href="<c:url value='?action=${actEmp}&command=${commIdx}' />">一覧に戻る</a>
+            <a href="${listUrl}">一覧に戻る</a>
         </p>
     </c:param>
 </c:import>
